@@ -5,7 +5,7 @@
  */
 
 #include "ecu_lua_script.h"
-#include "crcccitt.c"
+#include "libcrc/crcccitt.c"
 #include "utilities.h"
 #include <iostream>
 #include <string.h>
