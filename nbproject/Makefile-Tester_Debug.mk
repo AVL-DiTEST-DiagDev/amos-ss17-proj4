@@ -36,12 +36,15 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/src/broadcast_receiver.o \
+	${OBJECTDIR}/src/doip_configuration_file.o \
+	${OBJECTDIR}/src/doip_simulator.o \
 	${OBJECTDIR}/src/ecu_lua_script.o \
 	${OBJECTDIR}/src/ecu_timer.o \
 	${OBJECTDIR}/src/electronic_control_unit.o \
 	${OBJECTDIR}/src/isotp_receiver.o \
 	${OBJECTDIR}/src/isotp_sender.o \
 	${OBJECTDIR}/src/session_controller.o \
+	${OBJECTDIR}/src/start_arguments.o \
 	${OBJECTDIR}/src/uds_receiver.o \
 	${OBJECTDIR}/src/utilities.o
 
@@ -87,16 +90,26 @@ LDLIBSOPTIONS=`pkg-config --libs lua5.2`
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/amos-ss17-proj4
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/car-simulator
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/amos-ss17-proj4: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/car-simulator: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/amos-ss17-proj4 ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/car-simulator ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/src/broadcast_receiver.o: src/broadcast_receiver.cpp
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/broadcast_receiver.o src/broadcast_receiver.cpp
+
+${OBJECTDIR}/src/doip_configuration_file.o: src/doip_configuration_file.cpp
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/doip_configuration_file.o src/doip_configuration_file.cpp
+
+${OBJECTDIR}/src/doip_simulator.o: src/doip_simulator.cpp
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/doip_simulator.o src/doip_simulator.cpp
 
 ${OBJECTDIR}/src/ecu_lua_script.o: src/ecu_lua_script.cpp
 	${MKDIR} -p ${OBJECTDIR}/src
@@ -127,6 +140,11 @@ ${OBJECTDIR}/src/session_controller.o: src/session_controller.cpp
 	${MKDIR} -p ${OBJECTDIR}/src
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/session_controller.o src/session_controller.cpp
+
+${OBJECTDIR}/src/start_arguments.o: src/start_arguments.cpp
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/start_arguments.o src/start_arguments.cpp
 
 ${OBJECTDIR}/src/uds_receiver.o: src/uds_receiver.cpp
 	${MKDIR} -p ${OBJECTDIR}/src
@@ -239,6 +257,32 @@ ${OBJECTDIR}/src/broadcast_receiver_nomain.o: ${OBJECTDIR}/src/broadcast_receive
 	    ${CP} ${OBJECTDIR}/src/broadcast_receiver.o ${OBJECTDIR}/src/broadcast_receiver_nomain.o;\
 	fi
 
+${OBJECTDIR}/src/doip_configuration_file_nomain.o: ${OBJECTDIR}/src/doip_configuration_file.o src/doip_configuration_file.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/doip_configuration_file.o`; \
+	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
+	then  \
+	    ${RM} "$@.d";\
+	    $(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/doip_configuration_file_nomain.o src/doip_configuration_file.cpp;\
+	else  \
+	    ${CP} ${OBJECTDIR}/src/doip_configuration_file.o ${OBJECTDIR}/src/doip_configuration_file_nomain.o;\
+	fi
+
+${OBJECTDIR}/src/doip_simulator_nomain.o: ${OBJECTDIR}/src/doip_simulator.o src/doip_simulator.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/doip_simulator.o`; \
+	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
+	then  \
+	    ${RM} "$@.d";\
+	    $(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/doip_simulator_nomain.o src/doip_simulator.cpp;\
+	else  \
+	    ${CP} ${OBJECTDIR}/src/doip_simulator.o ${OBJECTDIR}/src/doip_simulator_nomain.o;\
+	fi
+
 ${OBJECTDIR}/src/ecu_lua_script_nomain.o: ${OBJECTDIR}/src/ecu_lua_script.o src/ecu_lua_script.cpp 
 	${MKDIR} -p ${OBJECTDIR}/src
 	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/ecu_lua_script.o`; \
@@ -315,6 +359,19 @@ ${OBJECTDIR}/src/session_controller_nomain.o: ${OBJECTDIR}/src/session_controlle
 	    $(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/session_controller_nomain.o src/session_controller.cpp;\
 	else  \
 	    ${CP} ${OBJECTDIR}/src/session_controller.o ${OBJECTDIR}/src/session_controller_nomain.o;\
+	fi
+
+${OBJECTDIR}/src/start_arguments_nomain.o: ${OBJECTDIR}/src/start_arguments.o src/start_arguments.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/start_arguments.o`; \
+	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
+	then  \
+	    ${RM} "$@.d";\
+	    $(COMPILE.cc) -g -Wall -I/usr/include/lua5.2 -ISelene/include `pkg-config --cflags lua5.2` -std=c++14  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/start_arguments_nomain.o src/start_arguments.cpp;\
+	else  \
+	    ${CP} ${OBJECTDIR}/src/start_arguments.o ${OBJECTDIR}/src/start_arguments_nomain.o;\
 	fi
 
 ${OBJECTDIR}/src/uds_receiver_nomain.o: ${OBJECTDIR}/src/uds_receiver.o src/uds_receiver.cpp 

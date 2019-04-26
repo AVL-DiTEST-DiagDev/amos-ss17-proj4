@@ -18,6 +18,8 @@ using namespace std;
 
 constexpr size_t MAX_UDS_MSG_SIZE = 4096; ///< max. 4096 bytes per UDS message
 
+IsoTpSender::IsoTpSender() { }
+
 /**
  * Constructor. Opens the sender socket.
  * 

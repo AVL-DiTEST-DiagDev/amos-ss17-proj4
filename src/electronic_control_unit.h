@@ -21,6 +21,7 @@ class ElectronicControlUnit
 {
 public:
     ElectronicControlUnit() = delete;
+    ElectronicControlUnit(std::unique_ptr<EcuLuaScript> pEcuScript);
     ElectronicControlUnit(const std::string& device, std::unique_ptr<EcuLuaScript> pEcuScript);
     ElectronicControlUnit(const ElectronicControlUnit& orig) = default;
     ElectronicControlUnit& operator =(const ElectronicControlUnit& orig) = default;
@@ -28,9 +29,12 @@ public:
     ElectronicControlUnit& operator =(ElectronicControlUnit&& orig) = default;
     virtual ~ElectronicControlUnit();
 
+    UdsReceiver* getUdsReceiver();
+    std::uint16_t getLogicalAddress() const;
 private:
     std::uint16_t requId_;
     std::uint16_t respId_;
+    std::uint16_t logicalAddress_;
     SessionController sessionControl_;
     IsoTpSender sender_;
     BroadcastReceiver broadcastReceiver_;

@@ -5,6 +5,8 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>src/broadcast_receiver.h</itemPath>
+      <itemPath>src/doip_configuration_file.h</itemPath>
+      <itemPath>src/doip_simulator.h</itemPath>
       <itemPath>src/ecu_lua_script.h</itemPath>
       <itemPath>src/ecu_timer.h</itemPath>
       <itemPath>src/electronic_control_unit.h</itemPath>
@@ -12,6 +14,7 @@
       <itemPath>src/isotp_sender.h</itemPath>
       <itemPath>src/service_identifier.h</itemPath>
       <itemPath>src/session_controller.h</itemPath>
+      <itemPath>src/start_arguments.h</itemPath>
       <itemPath>src/uds_receiver.h</itemPath>
       <itemPath>src/utilities.h</itemPath>
     </logicalFolder>
@@ -23,6 +26,8 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>src/broadcast_receiver.cpp</itemPath>
+      <itemPath>src/doip_configuration_file.cpp</itemPath>
+      <itemPath>src/doip_simulator.cpp</itemPath>
       <itemPath>src/ecu_lua_script.cpp</itemPath>
       <itemPath>src/ecu_timer.cpp</itemPath>
       <itemPath>src/electronic_control_unit.cpp</itemPath>
@@ -30,6 +35,7 @@
       <itemPath>src/isotp_sender.cpp</itemPath>
       <itemPath>src/main.cpp</itemPath>
       <itemPath>src/session_controller.cpp</itemPath>
+      <itemPath>src/start_arguments.cpp</itemPath>
       <itemPath>src/uds_receiver.cpp</itemPath>
       <itemPath>src/utilities.cpp</itemPath>
     </logicalFolder>
@@ -102,12 +108,22 @@
           <incDir>
             <pElem>/usr/include/lua5.2</pElem>
             <pElem>Selene/include</pElem>
+            <pElem>/usr/lib/libdoip/include</pElem>
           </incDir>
           <commandLine>-pthread</commandLine>
           <warningLevel>2</warningLevel>
         </ccTool>
         <linkerTool>
+          <linkerAddLib>
+            <pElem>/usr/lib/libdoip</pElem>
+          </linkerAddLib>
+          <linkerDynSerch>
+            <pElem>/usr/lib/libdoip</pElem>
+          </linkerDynSerch>
+          <linkerDepDynSerchKind>0</linkerDepDynSerchKind>
           <linkerLibItems>
+            <linkerLibLibItem>doipserver</linkerLibLibItem>
+            <linkerLibLibItem>doipcommon</linkerLibLibItem>
             <linkerOptionItem>`pkg-config --libs lua5.2`</linkerOptionItem>
             <linkerOptionItem>`pkg-config --libs cppunit`</linkerOptionItem>
           </linkerLibItems>
@@ -194,6 +210,14 @@
       </item>
       <item path="src/broadcast_receiver.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="src/doip_configuration_file.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_configuration_file.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ecu_lua_script.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/ecu_lua_script.h" ex="false" tool="3" flavor2="0">
@@ -221,6 +245,10 @@
       <item path="src/session_controller.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/session_controller.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/start_arguments.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/start_arguments.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/uds_receiver.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -386,6 +414,14 @@
       </item>
       <item path="src/broadcast_receiver.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="src/doip_configuration_file.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_configuration_file.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ecu_lua_script.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/ecu_lua_script.h" ex="false" tool="3" flavor2="0">
@@ -413,6 +449,10 @@
       <item path="src/session_controller.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/session_controller.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/start_arguments.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/start_arguments.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/uds_receiver.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -568,6 +608,14 @@
       </item>
       <item path="src/broadcast_receiver.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="src/doip_configuration_file.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_configuration_file.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/doip_simulator.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ecu_lua_script.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/ecu_lua_script.h" ex="false" tool="3" flavor2="0">
@@ -595,6 +643,10 @@
       <item path="src/session_controller.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/session_controller.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/start_arguments.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/start_arguments.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/uds_receiver.cpp" ex="false" tool="1" flavor2="0">
       </item>

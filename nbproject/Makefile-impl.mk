@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=amos-ss17-proj4
+PROJECTNAME=car-simulator
 
 # Active Configuration
 DEFAULTCONF=Debug

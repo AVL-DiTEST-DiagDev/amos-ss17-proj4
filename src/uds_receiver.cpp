@@ -19,6 +19,15 @@ using namespace std;
 static random_device RANDOM_DEVICE; ///< necessary for `generateSeed()`
 
 /**
+ * Constructor which is used when only simulating DoIP
+ * @param pEcuScript    pointer to ECU config object
+ */
+UdsReceiver::UdsReceiver(std::unique_ptr<EcuLuaScript> pEcuScript)
+: pEcuScript_(move(pEcuScript))
+{
+}
+
+/**
  * Constructor.
  * 
  * @param source
@@ -321,4 +330,24 @@ uint16_t UdsReceiver::generateSeed()
     default_random_engine gen(RANDOM_DEVICE());
     uniform_int_distribution<uint16_t> dist(0, numeric_limits<uint16_t>::max());
     return dist(gen);
+}
+
+
+/**
+ * Proceed received DoIP data
+ * @param buffer        received DoIP data
+ * @param num_bytes     length of data
+ * @return              answer from the ecu config file
+ */
+std::vector<unsigned char> UdsReceiver::proceedDoIPData(const unsigned char* buffer, const size_t num_bytes) noexcept {
+    const uint8_t udsServiceIdentifier = buffer[0];
+    const string identifier = intToHexString(buffer, num_bytes);
+    
+    const bool isRaw = pEcuScript_->hasRaw(identifier);
+    vector<unsigned char> raw;
+    if(isRaw) {
+        raw = pEcuScript_->literalHexStrToBytes(pEcuScript_->getRaw(identifier));
+    }
+    
+    return raw;
 }

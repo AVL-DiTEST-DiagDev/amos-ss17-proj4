@@ -13,7 +13,7 @@
 class IsoTpSender
 {
 public:
-    IsoTpSender() = delete;
+    IsoTpSender();
     IsoTpSender(canid_t source, canid_t dest, const std::string& device);
     IsoTpSender(const IsoTpSender& orig) = default;
     IsoTpSender& operator =(const IsoTpSender& orig) = default;

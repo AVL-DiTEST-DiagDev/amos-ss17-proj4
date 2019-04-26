@@ -13,7 +13,7 @@
 class IsoTpReceiver
 {
 public:
-    IsoTpReceiver() = delete;
+    IsoTpReceiver();
     IsoTpReceiver(canid_t source, canid_t dest, const std::string& device);
     IsoTpReceiver(const IsoTpReceiver& orig) = default;
     IsoTpReceiver& operator =(const IsoTpReceiver& orig) = default;

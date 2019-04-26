@@ -31,10 +31,13 @@ static string receivedDataBytes = "";
  * @param ecuIdent: the identifier name for the ECU (e.g. "PCM")
  * @param luaScript: the path to the Lua script
  */
-EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript)
+EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript, DoIPServer* server)
 {
     if (utils::existsFile(luaScript))
     {
+        
+        registedServer = server;
+        
         // inject the C++ functions into the Lua script
         lua_state_["ascii"] = &ascii;
         lua_state_["getCounterByte"] = &getCounterByte;
@@ -46,6 +49,10 @@ EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript)
         lua_state_["getCurrentSession"] = [this]() -> uint32_t { return this->getCurrentSession(); }; 
         lua_state_["switchToSession"] = [this](uint32_t ses) { this->switchToSession(ses); };
         lua_state_["sendRaw"] = [this](const string& msg) { this->sendRaw(msg); };
+        
+        //DoIP functions in Lua Script
+        lua_state_["disconnect"] = [this](){registedServer->triggerDisconnection();};
+        lua_state_["sendAnnouncement"] = [this] {registedServer->sendVehicleAnnouncement();};
 
         lua_state_.Load(luaScript);
         if (lua_state_[ecuIdent.c_str()].exists())
@@ -77,6 +84,12 @@ EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript)
             {
                 broadcastId_ = int(broadcastId);
             }
+            
+            auto logicalAddress = lua_state_[ecu_ident_.c_str()][LOGICAL_ADDRESS_FIELD];
+            if (logicalAddress.exists()) 
+            {
+                logicalAddress_ = int(logicalAddress);
+            }
 
             return;
         }
@@ -97,6 +110,7 @@ EcuLuaScript::EcuLuaScript(EcuLuaScript&& orig) noexcept
 , requestId_(orig.requestId_)
 , responseId_(orig.responseId_)
 , broadcastId_(orig.broadcastId_)
+, logicalAddress_(orig.logicalAddress_)
 {
     orig.pSessionCtrl_ = nullptr;
     orig.pIsoTpSender_ = nullptr;
@@ -118,6 +132,7 @@ EcuLuaScript& EcuLuaScript::operator=(EcuLuaScript&& orig) noexcept
     requestId_ = orig.requestId_;
     responseId_ = orig.responseId_;
     broadcastId_ = orig.broadcastId_;
+    logicalAddress_ = orig.logicalAddress_;
     orig.pIsoTpSender_ = nullptr;
     orig.pSessionCtrl_ = nullptr;
     return *this;
@@ -156,6 +171,15 @@ uint16_t EcuLuaScript::getResponseId() const
 uint16_t EcuLuaScript::getBroadcastId() const
 {
     return broadcastId_;
+}
+
+/**
+ * Gets the Logical Address to the ECU.
+ * @return 
+ */
+uint16_t EcuLuaScript::getLogicalAddress() const 
+{
+    return logicalAddress_;
 }
 
 /**

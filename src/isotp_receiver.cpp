@@ -23,6 +23,8 @@ using namespace std;
 
 constexpr size_t MAX_BUFSIZE = 4096; ///< max. 4096 bytes per UDS message
 
+IsoTpReceiver::IsoTpReceiver() { }
+
 /**
  * Constructor. Opens the receiver socket.
  * 
@@ -126,7 +128,7 @@ void IsoTpReceiver::closeReceiver() noexcept
  * @see IsoTpReceiver::closeReceiver()
  */
 int IsoTpReceiver::readData() noexcept
-{
+{       
     if (receive_skt_ < 0)
     {
         cerr << __func__ << "() Can not read data. Receiver socket invalid!\n";
@@ -144,7 +146,7 @@ int IsoTpReceiver::readData() noexcept
         }
     }
     while (!isOnExit_);
-
+    
     return 0;
 }
 

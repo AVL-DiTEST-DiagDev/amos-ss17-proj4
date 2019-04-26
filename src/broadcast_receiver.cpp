@@ -11,6 +11,11 @@
 
 using namespace std;
 
+/**
+ *  Default Constructor which is used when simulation only DoIP
+ */
+BroadcastReceiver::BroadcastReceiver() { }
+
 BroadcastReceiver::BroadcastReceiver(canid_t source,
                                      const string& device,
                                      UdsReceiver* pUdsRec)
