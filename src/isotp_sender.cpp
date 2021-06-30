@@ -18,6 +18,8 @@ using namespace std;
 
 constexpr size_t MAX_UDS_MSG_SIZE = 4096; ///< max. 4096 bytes per UDS message
 
+#define NUM_SEND_RETRIES 5
+
 /**
  * Constructor. Opens the sender socket.
  * 
@@ -44,7 +46,6 @@ IsoTpSender::IsoTpSender(canid_t source,
  */
 IsoTpSender::~IsoTpSender()
 {
-    closeSender();
 }
 
 /**
@@ -56,8 +57,21 @@ IsoTpSender::~IsoTpSender()
 int IsoTpSender::openSender() noexcept
 {
     struct sockaddr_can addr;
-    addr.can_addr.tp.tx_id = source_; // sender
-    addr.can_addr.tp.rx_id = dest_; // receiver
+    cout << "sender: tx_id: " << source_ << " - ";
+    addr.can_addr.tp.tx_id = source_;
+    if(source_ > 0x7FFu) {
+        cout << "29bit";
+        addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+    }
+    cout << endl;
+
+    cout << "sender: rx_id: " << dest_ << " - ";
+    addr.can_addr.tp.rx_id = dest_;
+    if(dest_ > 0x7FFu) {
+        cout << "29bit";
+        addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+    }
+    cout << endl;
     addr.can_family = AF_CAN;
 
     int skt = socket(PF_CAN, SOCK_DGRAM, CAN_ISOTP);
@@ -130,13 +144,20 @@ int IsoTpSender::sendData(const void* buffer, size_t size) const noexcept
         return -1;
     }
 
-    auto bytes_sent = write(send_skt_, buffer, size);
-    if (bytes_sent < 0)
+    int bytes_sent = 0;
+    int retries = NUM_SEND_RETRIES;
+    while(retries > 0)
     {
-        cerr << __func__ << "() write: " << strerror(errno) << '\n';
-        return -2;
+        bytes_sent = write(send_skt_, buffer, size);
+        if (bytes_sent < 0)
+        {
+            cerr << __func__ << "() write: " << strerror(errno) << '\n';
+            retries--;
+            usleep(1000*5); // wait 5ms before retry
+        } else {
+            retries = 0;
+        }
     }
 
     return bytes_sent;
 }
-

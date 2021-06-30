@@ -10,19 +10,39 @@
 
 using namespace std;
 
-ElectronicControlUnit::ElectronicControlUnit(const string& device, unique_ptr<EcuLuaScript> pEcuScript)
+ElectronicControlUnit::ElectronicControlUnit(const string& device, EcuLuaScript *pEcuScript)
 : requId_(pEcuScript->getRequestId())
 , respId_(pEcuScript->getResponseId())
 , sender_(respId_, requId_, device)
 , broadcastReceiver_(pEcuScript->getBroadcastId(), device, &udsReceiver_)
-, udsReceiver_(respId_, requId_, device, move(pEcuScript), &sender_, &sessionControl_)
+, udsReceiver_(respId_, requId_, device, pEcuScript, &sender_, &sessionControl_)
 , udsReceiverThread_(&IsoTpReceiver::readData, &udsReceiver_)
 , broadcastReceiverThread_(&IsoTpReceiver::readData, &broadcastReceiver_)
 {
 }
 
-ElectronicControlUnit::~ElectronicControlUnit()
+void ElectronicControlUnit::stopSimulation()
+{
+    sender_.closeSender();
+    broadcastReceiver_.closeReceiver();
+    udsReceiver_.closeReceiver();
+}
+
+void ElectronicControlUnit::waitForSimulationEnd()
 {
     broadcastReceiverThread_.join();
     udsReceiverThread_.join();
+}
+
+ElectronicControlUnit::~ElectronicControlUnit()
+{
+
+}
+
+bool ElectronicControlUnit::hasSimulation(EcuLuaScript *pEcuScript)
+{
+    if(pEcuScript->hasRequestId() && pEcuScript->hasResponseId()) {
+        return true;
+    }
+    return false;
 }

@@ -49,7 +49,6 @@ IsoTpReceiver::IsoTpReceiver(canid_t source,
  */
 IsoTpReceiver::~IsoTpReceiver()
 {
-    closeReceiver();
 }
 
 /**
@@ -62,8 +61,22 @@ int IsoTpReceiver::openReceiver() noexcept
 {
     isOnExit_ = false;
     struct sockaddr_can addr;
+
+    cout << "receiver tx_id: " << dec << (uint32_t)source_ << " - ";
     addr.can_addr.tp.tx_id = source_;
+    if(source_ > 0x7FFu) {
+        cout << "29bit";
+        addr.can_addr.tp.tx_id |= CAN_EFF_FLAG;
+    }
+    cout << endl;
+
+    cout << "receiver rx_id: " << dec << (uint32_t)dest_ << " - ";
     addr.can_addr.tp.rx_id = dest_;
+    if(dest_ > 0x7FFu) {
+        cout << "29bit";
+        addr.can_addr.tp.rx_id |= CAN_EFF_FLAG;
+    }
+    cout << endl;
 
     addr.can_family = AF_CAN;
 
@@ -138,6 +151,7 @@ int IsoTpReceiver::readData() noexcept
     do
     {
         num_bytes = read(receive_skt_, msg, MAX_BUFSIZE);
+        cout << "READ returned" << endl;
         if (num_bytes > 0 && num_bytes < MAX_BUFSIZE)
         {
             proceedReceivedData(msg, num_bytes);

@@ -13,6 +13,7 @@
 #include "isotp_sender.h"
 #include "broadcast_receiver.h"
 #include "uds_receiver.h"
+#include "j1939_simulator.h"
 #include <string>
 #include <thread>
 #include <memory>
@@ -20,17 +21,24 @@
 class ElectronicControlUnit
 {
 public:
+    static bool hasSimulation(EcuLuaScript *pEcuScript);
+
+public:
     ElectronicControlUnit() = delete;
-    ElectronicControlUnit(const std::string& device, std::unique_ptr<EcuLuaScript> pEcuScript);
+    ElectronicControlUnit(const std::string& device, EcuLuaScript *pEcuScript);
     ElectronicControlUnit(const ElectronicControlUnit& orig) = default;
     ElectronicControlUnit& operator =(const ElectronicControlUnit& orig) = default;
     ElectronicControlUnit(ElectronicControlUnit&& orig) = default;
     ElectronicControlUnit& operator =(ElectronicControlUnit&& orig) = default;
     virtual ~ElectronicControlUnit();
 
+    void stopSimulation();
+    void waitForSimulationEnd();
+
+
 private:
-    std::uint16_t requId_;
-    std::uint16_t respId_;
+    std::uint32_t requId_;
+    std::uint32_t respId_;
     SessionController sessionControl_;
     IsoTpSender sender_;
     BroadcastReceiver broadcastReceiver_;

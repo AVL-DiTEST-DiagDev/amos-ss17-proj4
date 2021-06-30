@@ -166,7 +166,7 @@ public:
             ResetStackOnScopeExit save(_state);
             _traverse();
             _get();
-            if (std::uncaught_exception())
+            if (std::uncaught_exceptions() > 0)
             {
                 try {
                     _evaluate_function_call(0);
@@ -359,6 +359,38 @@ public:
         return ret;
     }
 
+    // Vector of keys in the table
+    std::vector<std::string> getKeys() const {
+        ResetStackOnScopeExit save(_state);
+        _evaluate_retrieve(1);
+        std::vector<std::string> vec;
+
+        // see: https://stackoverflow.com/questions/6137684/iterate-through-lua-table
+        // stack now contains: -1 => table
+        lua_pushnil(_state);
+        // stack now contains: -1 => nil; -2 => table
+        while (lua_next(_state, -2))
+        {
+            // stack now contains: -1 => value; -2 => key; -3 => table
+            // copy the key so that lua_tostring does not modify the original
+            lua_pushvalue(_state, -2);
+            // stack now contains: -1 => key; -2 => value; -3 => key; -4 => table
+            const char *keyStr = lua_tostring(_state, -1);
+            if(keyStr != NULL) {
+                vec.push_back(keyStr);
+            }
+            // pop value + copy of key, leaving original key
+            lua_pop(_state, 2);
+            // stack now contains: -1 => key; -2 => table
+        }
+
+        return vec;
+    }
+
+    std::string toString() const {
+        return *this;
+    }
+
     // Chaining operators. If the selector is an rvalue, modify in
     // place. Otherwise, create a new Selector and return it.
 #ifdef HAS_REF_QUALIFIERS
@@ -416,6 +448,14 @@ public:
         _get();
 
         return lua_isfunction(_state, -1);
+    }
+
+    bool isTable() {
+        ResetStackOnScopeExit save(_state);
+        _traverse();
+        _get();
+
+        return lua_istable(_state, -1);
     }
 
 private:

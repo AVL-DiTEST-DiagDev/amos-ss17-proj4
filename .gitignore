@@ -40,9 +40,10 @@ build/
 dist/
 .settings/
 .dep.inc
+.vscode
 
 # ctags file
 tags
 
 runme
-
+lua_config

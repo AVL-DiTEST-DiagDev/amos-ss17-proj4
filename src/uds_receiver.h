@@ -21,7 +21,7 @@ public:
     UdsReceiver(canid_t source,
                 canid_t dest,
                 const std::string& device,
-                std::unique_ptr<EcuLuaScript> pEcuScript,
+                EcuLuaScript *pEcuScript,
                 IsoTpSender* pSender,
                 SessionController* pSesCtrl);
     UdsReceiver(const UdsReceiver& orig) = default;
@@ -34,7 +34,7 @@ public:
     virtual void proceedReceivedData(const uint8_t* buffer, const size_t num_bytes) noexcept override;
 
 private:
-    std::unique_ptr<EcuLuaScript> pEcuScript_;
+    EcuLuaScript *pEcuScript_;
     IsoTpSender* pIsoTpSender_ = nullptr;
     SessionController* pSessionCtrl_ = nullptr;
     std::uint8_t securityAccessType_ = 0x00;

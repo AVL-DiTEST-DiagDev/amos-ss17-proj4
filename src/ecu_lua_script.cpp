@@ -5,7 +5,7 @@
  */
 
 #include "ecu_lua_script.h"
-#include "crcccitt.c"
+#include "libcrc/crcccitt.c"
 #include "utilities.h"
 #include <iostream>
 #include <string.h>
@@ -33,16 +33,19 @@ static string receivedDataBytes = "";
  */
 EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript)
 {
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
     if (utils::existsFile(luaScript))
     {
         // inject the C++ functions into the Lua script
-        lua_state_["ascii"] = &ascii;
-        lua_state_["getCounterByte"] = &getCounterByte;
-        lua_state_["getDataBytes"] = &getDataBytes;
-        lua_state_["createHash"] = &createHash;
-        lua_state_["toByteResponse"] = &toByteResponse;
-        lua_state_["sleep"] = &sleep;
-        // some lambda magic for the member functions 
+        // static functions
+        lua_state_["ascii"] = [](const string& utf8_str) -> string { return ascii(utf8_str); };
+        lua_state_["getCounterByte"] = [](const string& msg) -> string { return getCounterByte(msg); };
+        lua_state_["getDataBytes"] = [](const string& msg) { return getDataBytes(msg); };
+        lua_state_["createHash"] = []() -> string { return createHash(); };
+        lua_state_["toByteResponse"] = [](uint32_t value, uint32_t len = sizeof(uint32_t)) -> string { return toByteResponse(value, len); };
+        lua_state_["sleep"] = [](unsigned int ms) { return sleep(ms); };
+        // member functions
         lua_state_["getCurrentSession"] = [this]() -> uint32_t { return this->getCurrentSession(); }; 
         lua_state_["switchToSession"] = [this](uint32_t ses) { this->switchToSession(ses); };
         lua_state_["sendRaw"] = [this](const string& msg) { this->sendRaw(msg); };
@@ -55,33 +58,34 @@ EcuLuaScript::EcuLuaScript(const string& ecuIdent, const string& luaScript)
             auto requId = lua_state_[ecu_ident_.c_str()][REQ_ID_FIELD];
             if (requId.exists())
             {
-                requestId_ = int(requId);
-            }
-            else
-            {
-                throw invalid_argument("No 'RequestId'-field in the Lua ECU table!");
+                hasRequestId_ = true;
+                requestId_ = uint32_t(requId);
             }
 
             auto respId = lua_state_[ecu_ident_.c_str()][RES_ID_FIELD];
             if (respId.exists())
             {
-                responseId_ = int(respId);
-            }
-            else
-            {
-                throw invalid_argument("No 'ResponseId'-field in the Lua ECU table!");
+                hasResponseId_ = true;
+                responseId_ = uint32_t(respId);
             }
 
             auto broadcastId = lua_state_[ecu_ident_.c_str()][BROADCAST_ID_FIELD];
             if (broadcastId.exists())
             {
-                broadcastId_ = int(broadcastId);
+                hasBroadcastId_ = true;
+                broadcastId_ = uint32_t(broadcastId);
+            }
+
+            auto j1939SourceAddress = lua_state_[ecu_ident_.c_str()][J1939_SOURCE_ADDRESS_FIELD];
+            if (j1939SourceAddress.exists())
+            {
+                hasJ1939SourceAddress_ = true;
+                j1939SourceAddress_ = uint32_t(j1939SourceAddress);
             }
 
             return;
         }
     }
-    throw invalid_argument("No, or invalid Lua script!");
 }
 
 /**
@@ -97,6 +101,7 @@ EcuLuaScript::EcuLuaScript(EcuLuaScript&& orig) noexcept
 , requestId_(orig.requestId_)
 , responseId_(orig.responseId_)
 , broadcastId_(orig.broadcastId_)
+, j1939SourceAddress_(orig.j1939SourceAddress_)
 {
     orig.pSessionCtrl_ = nullptr;
     orig.pIsoTpSender_ = nullptr;
@@ -118,6 +123,7 @@ EcuLuaScript& EcuLuaScript::operator=(EcuLuaScript&& orig) noexcept
     requestId_ = orig.requestId_;
     responseId_ = orig.responseId_;
     broadcastId_ = orig.broadcastId_;
+    j1939SourceAddress_ = orig.j1939SourceAddress_;
     orig.pIsoTpSender_ = nullptr;
     orig.pSessionCtrl_ = nullptr;
     return *this;
@@ -130,7 +136,7 @@ EcuLuaScript& EcuLuaScript::operator=(EcuLuaScript&& orig) noexcept
  *
  * @return the request ID or 0 on error
  */
-uint16_t EcuLuaScript::getRequestId() const
+uint32_t EcuLuaScript::getRequestId() const
 {
     return requestId_;
 }
@@ -142,7 +148,7 @@ uint16_t EcuLuaScript::getRequestId() const
  *
  * @return the response ID or 0 on error
  */
-uint16_t EcuLuaScript::getResponseId() const
+uint32_t EcuLuaScript::getResponseId() const
 {
     return responseId_;
 }
@@ -153,9 +159,19 @@ uint16_t EcuLuaScript::getResponseId() const
  * @return the specific broadcast address according to the Lua file or `0x7DF`
  *         on default
  */
-uint16_t EcuLuaScript::getBroadcastId() const
+uint32_t EcuLuaScript::getBroadcastId() const
 {
     return broadcastId_;
+}
+
+/**
+ * Gets the J1939SourceAddress
+ *  
+ * @return the specific J1939 address according to the Lua file
+ */
+uint8_t EcuLuaScript::getJ1939SourceAddress() const
+{
+    return j1939SourceAddress_;
 }
 
 /**
@@ -164,8 +180,10 @@ uint16_t EcuLuaScript::getBroadcastId() const
  * @param identifier: the identifier to access the field in the Lua table
  * @return the identifier field on success, otherwise an empty string
  */
-string EcuLuaScript::getDataByIdentifier(const string& identifier) const
+string EcuLuaScript::getDataByIdentifier(const string& identifier)
 {
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
     auto val = lua_state_[ecu_ident_.c_str()][READ_DATA_BY_IDENTIFIER_TABLE][identifier];
 
     if (val.isFunction())
@@ -185,8 +203,10 @@ string EcuLuaScript::getDataByIdentifier(const string& identifier) const
  * @param session: the session as string (e.g. "Programming")
  * @return the identifier field on success, otherwise an empty string
  */
-string EcuLuaScript::getDataByIdentifier(const string& identifier, const string& session) const
+string EcuLuaScript::getDataByIdentifier(const string& identifier, const string& session)
 {
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
     auto val = lua_state_[ecu_ident_.c_str()][session][READ_DATA_BY_IDENTIFIER_TABLE][identifier];
 
     if (val.isFunction())
@@ -199,8 +219,10 @@ string EcuLuaScript::getDataByIdentifier(const string& identifier, const string&
     }
 }
 
-string EcuLuaScript::getSeed(uint8_t seed_level) const
+string EcuLuaScript::getSeed(uint8_t seed_level)
 {
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
     auto val = lua_state_[ecu_ident_.c_str()][READ_SEED][seed_level];
     if (val.exists())
     {
@@ -232,6 +254,7 @@ vector<uint8_t> EcuLuaScript::literalHexStrToBytes(const string& hexString)
         byte = static_cast<uint8_t> (strtol(byteString.c_str(), NULL, 16));
         data.push_back(byte);
     }
+    cout << endl;
     return data;
 }
 
@@ -434,8 +457,10 @@ void EcuLuaScript::switchToSession(int ses)
  * @param identStr: the identifier string for the entry in the Lua "Raw"-table
  * @return true if identifier is in the raw section, false otherwise
  */
-bool EcuLuaScript::hasRaw(const string& identStr) const
+bool EcuLuaScript::hasRaw(const string& identStr)
 {
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
     auto val = lua_state_[ecu_ident_.c_str()][RAW_TABLE][identStr.c_str()];
     if(val.exists()==false){
         string identStrWorking = " ";
@@ -453,6 +478,86 @@ bool EcuLuaScript::hasRaw(const string& identStr) const
 }
 
 /**
+ * Gets all request entries from the Lua "Raw"-Table.
+ *
+ * @return vector of raw request data as they are configured in lua
+ */
+vector<string> EcuLuaScript::getRawRequests()
+{
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
+    auto rawTable = lua_state_[ecu_ident_.c_str()][RAW_TABLE];
+    if(rawTable.exists()) {
+        return rawTable.getKeys();
+    } else {
+        return vector<string>();
+    }
+}
+
+/**
+ * Gets J1939 PGNS from the Lua PGN-Table.
+ *
+ * @return vector of raw message data as they are configured in lua
+ */
+vector<string> EcuLuaScript::getJ1939PGNs()
+{
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
+    cout << "Get PGNs from ident: " << ecu_ident_ << endl;
+    auto pgnTable = lua_state_[ecu_ident_.c_str()][J1939_PGN_TABLE];
+    if(pgnTable.exists()) {
+        return pgnTable.getKeys();
+    } else {
+        return vector<string>();
+    }
+}
+
+J1939PGNData EcuLuaScript::getJ1939PGNData(const string& pgn)
+{
+    const std::lock_guard<std::mutex> lock(luaLock_);
+
+    J1939PGNData pgnData;
+    pgnData.cycleTime = 0;
+
+    cout << "Looking for PGN: " << pgn << endl;
+    auto val = lua_state_[ecu_ident_.c_str()][J1939_PGN_TABLE][pgn.c_str()];
+    cout << "Checking PGN value: " << pgn << endl;
+    if(val.exists() == true) {
+        cout << "Found PGN: " << pgn << endl;
+        if (val.isFunction())
+        {
+            pgnData.payload = val(pgn).toString();
+        }
+        else if(val.isTable())
+        {
+            auto pgnPayload = val[J1939_PGN_PAYLOAD];
+            auto pgnCycleTime = val[J1939_PGN_CYCLETIME];
+            if(pgnCycleTime.exists() == true) {
+                pgnData.cycleTime = pgnCycleTime;
+            }
+            if(pgnPayload.exists() == true) {
+                if(pgnPayload.isFunction())
+                {
+                    pgnData.payload = pgnPayload(pgn).toString();
+                }
+                else
+                {
+                    pgnData.payload = pgnPayload.toString();
+                }
+            }
+        }
+        else
+        {
+            pgnData.payload = val.toString(); // will be cast into string
+        } 
+    } else {
+        cerr << "Unknown PGN: " << pgn << endl;
+    }
+
+    return pgnData;
+}
+
+/**
  * Gets the raw data entries from the Lua "Raw"-Table.
  * The identifiers of the corresponding entries are literal hex byte strings
  * (e.g. "12 FF 00"). The entries are either strings or functions that need
@@ -461,8 +566,10 @@ bool EcuLuaScript::hasRaw(const string& identStr) const
  * @param identStr: the identifier string for the entry in the Lua "Raw"-table
  * @return the raw data as literal hex byte string or an empty string on error
  */
-string EcuLuaScript::getRaw(const string& identStr) const
+string EcuLuaScript::getRaw(const string& identStr)
 { 
+    const std::lock_guard<std::mutex> scopelock(luaLock_);
+
     auto val = lua_state_[ecu_ident_.c_str()][RAW_TABLE][identStr.c_str()];
     if(val.exists() == true){
         
@@ -513,4 +620,3 @@ void EcuLuaScript::registerIsoTpSender(IsoTpSender* pSender) noexcept
 {
     pIsoTpSender_ = pSender;
 }
-
